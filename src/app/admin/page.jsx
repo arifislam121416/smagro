@@ -27,13 +27,14 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:4000";
 
-export default function AdminDashboard() {
+export default function  AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
 
   const [user, setUser] = useState(null);
 
   const [users, setUsers] = useState([]);
+  const [productCount, setProductCount] = useState(0);
 
   const [loading, setLoading] =
     useState(true);
@@ -94,6 +95,21 @@ export default function AdminDashboard() {
             usersData.users || []
           );
         }
+        const productsResponse = await fetch(
+  `${API_URL}/api/products/count`
+);
+
+const productsData =
+  await productsResponse.json();
+
+if (
+  productsResponse.ok &&
+  productsData.success
+) {
+  setProductCount(
+    productsData.count || 0
+  );
+}
       } catch (err) {
         console.error(
           "Admin dashboard error:",
@@ -110,6 +126,7 @@ export default function AdminDashboard() {
 
     checkAdmin();
   }, []);
+
 
   /* =========================
      LOGOUT
@@ -235,7 +252,7 @@ export default function AdminDashboard() {
 
             <StatCard
               title="Total Products"
-              value="1"
+              value={productCount}
               subtitle="Active products"
               icon={Package}
               iconBg="bg-green-50"
