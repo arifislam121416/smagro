@@ -51,6 +51,7 @@ export default function AdminUsersPage() {
   };
 
   const handleRoleChange = async (user) => {
+    
   const newRole = user.role === "admin" ? "user" : "admin";
 
   const confirmed = window.confirm(
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
 
   try {
     const response = await fetch(
-      `${API_URL}/api/auth/users/${user._id}/role`,
+      `${API_URL}/api/auth/users/${user.id}/role`,
       {
         method: "PATCH",
         headers: {
@@ -84,7 +85,7 @@ export default function AdminUsersPage() {
 
     setUsers((previousUsers) =>
       previousUsers.map((item) =>
-        item._id === user._id
+        item.id === user.id
           ? {
               ...item,
               role: newRole,
@@ -97,6 +98,104 @@ export default function AdminUsersPage() {
 
     setError(
       error.message || "Failed to update user role."
+    );
+  }
+};
+
+const handleStatusChange = async (user) => {
+  const newStatus =
+    user.status === "active" ? "blocked" : "active";
+
+  const confirmed = window.confirm(
+    `Are you sure you want to ${
+      newStatus === "blocked" ? "block" : "activate"
+    } ${user.name || user.email}?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setError("");
+
+    const response = await fetch(
+      `${API_URL}/api/auth/users/${user.id}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to update user status."
+      );
+    }
+
+    setUsers((previousUsers) =>
+      previousUsers.map((item) =>
+        item.id === user.id
+          ? {
+              ...item,
+              status: newStatus,
+            }
+          : item
+      )
+    );
+  } catch (error) {
+    console.error("Status update error:", error);
+
+    setError(
+      error.message || "Failed to update user status."
+    );
+  }
+};
+
+const handleDeleteUser = async (user) => {
+  const confirmed = window.confirm(
+    `Are you sure you want to permanently delete ${
+      user.name || user.email
+    }? This action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setError("");
+
+    const response = await fetch(
+      `${API_URL}/api/auth/users/${user.id}`,
+      {
+        method: "DELETE",
+        credentials: "include",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to delete user."
+      );
+    }
+
+    setUsers((previousUsers) =>
+      previousUsers.filter(
+        (item) => item.id !== user.id
+      )
+    );
+  } catch (error) {
+    console.error("Delete user error:", error);
+
+    setError(
+      error.message || "Failed to delete user."
     );
   }
 };
@@ -288,7 +387,7 @@ export default function AdminUsersPage() {
                 <tbody className="divide-y divide-gray-100">
                   {filteredUsers.map((user, index) => (
                     <tr
-                       key={user._id?.toString() || user.email || `user-${index}`}
+                       key={user.id?.toString() || user.email || `user-${index}`}
                       className="transition hover:bg-gray-50"
                     >
                       {/* User */}
@@ -353,6 +452,25 @@ export default function AdminUsersPage() {
   {user.role === "admin"
     ? "Make User"
     : "Make Admin"}
+</button>
+
+<button
+  onClick={() => handleStatusChange(user)}
+  className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+    user.status === "active"
+      ? "border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100"
+      : "border-green-200 bg-green-50 text-green-700 hover:border-green-300 hover:bg-green-100"
+  }`}
+>
+  {user.status === "active"
+    ? "Block"
+    : "Activate"}
+</button>
+<button
+  onClick={() => handleDeleteUser(user)}
+  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
+>
+  Delete
 </button>
                       </td>
                     </tr>

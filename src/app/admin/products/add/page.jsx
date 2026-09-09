@@ -38,6 +38,9 @@ export default function AddProductPage() {
     badge: "",
     status: "active",
   });
+const [imageFile, setImageFile] = useState(null);
+const [imagePreview, setImagePreview] = useState("");
+const [imageUploading, setImageUploading] = useState(false);
 
   const [benefits, setBenefits] = useState([""]);
   const [usage, setUsage] = useState([""]);
@@ -144,6 +147,19 @@ export default function AddProductPage() {
 
     try {
       setLoading(true);
+      let imageUrl = "";
+
+  if (imageFile) {
+    setImageUploading(true);
+
+    imageUrl = await uploadImage(imageFile);
+
+    setImageUploading(false);
+  }
+  if (!imageFile) {
+  setError("Please select a product image.");
+  return;
+}
 
       const productData = {
         name: formData.name.trim(),
@@ -170,7 +186,7 @@ export default function AddProductPage() {
 
         stock: Number(formData.stock),
 
-        image: formData.image.trim(),
+        image: imageUrl || formData.image.trim(),
 
         badge: formData.badge.trim(),
 
@@ -512,48 +528,54 @@ export default function AddProductPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="image"
-                className="mb-2 block text-sm font-semibold text-gray-700"
-              >
-                Image URL / Path
-              </label>
+  <label
+    htmlFor="productImage"
+    className="mb-2 block text-sm font-semibold text-gray-700"
+  >
+    Product Image *
+  </label>
 
-              <div className="relative">
-                <ImageIcon
-                  size={19}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+  <input
+    id="productImage"
+    type="file"
+    accept="image/*"
+    onChange={(event) => {
+      const file = event.target.files?.[0];
 
-                <input
-                  id="image"
-                  name="image"
-                  type="text"
-                  value={formData.image}
-                  onChange={handleChange}
-                  placeholder="/products/amino-mix.jpg"
-                  className="w-full rounded-xl border border-gray-200 py-3 pl-11 pr-4 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                />
-              </div>
+      if (!file) return;
 
-              {formData.image && (
-                <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-3">
-                  <p className="mb-2 text-xs font-medium text-gray-500">
-                    Image Preview
-                  </p>
+      // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Product image must be less than 5MB.");
+        return;
+      }
 
-                  <img
-                    src={formData.image}
-                    alt="Product preview"
-                    className="h-48 w-full rounded-lg object-contain"
-                    onError={(event) => {
-                      event.currentTarget.style.display =
-                        "none";
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setError("");
+      setSuccess("");
+    }}
+    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-green-100 file:px-4 file:py-2 file:font-semibold file:text-green-700 hover:file:bg-green-200"
+  />
+
+  <p className="mt-2 text-xs text-gray-400">
+    JPG, PNG or WEBP. Maximum 5MB.
+  </p>
+
+  {imagePreview && (
+    <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-3">
+      <p className="mb-2 text-xs font-medium text-gray-500">
+        Image Preview
+      </p>
+
+      <img
+        src={imagePreview}
+        alt="Product preview"
+        className="h-56 w-full rounded-lg object-contain"
+      />
+    </div>
+  )}
+</div>
           </section>
 
           {/* -------------------------------- */}
@@ -769,17 +791,17 @@ export default function AddProductPage() {
               disabled={loading}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Save size={18} />
-                  Create Product
-                </>
-              )}
+             {loading ? (
+  <>
+    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+    {imageUploading ? "Uploading Image..." : "Creating..."}
+  </>
+) : (
+  <>
+    <Save size={18} />
+    Create Product
+  </>
+)}
             </button>
           </div>
         </form>

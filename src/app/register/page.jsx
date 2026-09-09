@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Loader2,
 } from "lucide-react";
+import { uploadImage } from "@/utils/uploadImage";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -29,12 +30,15 @@ export default function RegisterPage() {
     phone: "",
     password: "",
     confirmPassword: "",
+    profileImage: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
-
+const [profileImageFile, setProfileImageFile] = useState(null);
+const [profileImagePreview, setProfileImagePreview] =
+  useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -88,6 +92,12 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
+      let profileImageUrl = "";
+
+if (profileImageFile) {
+  profileImageUrl = await uploadImage(profileImageFile);
+}
+      
 
       const response = await fetch(
         `${API_URL}/api/auth/register`,
@@ -101,6 +111,7 @@ export default function RegisterPage() {
             email: email.trim(),
             phone: phone.trim(),
             password,
+            profileImage: profileImageUrl,
           }),
         }
       );
@@ -325,6 +336,57 @@ export default function RegisterPage() {
                   showPassword={showConfirmPassword}
                   setShowPassword={setShowConfirmPassword}
                 />
+
+                {/* Profile Image */}
+<div>
+  <label
+    htmlFor="profileImage"
+    className="mb-2 block text-sm font-semibold text-gray-700"
+  >
+    Profile Image
+  </label>
+
+  <input
+    id="profileImage"
+    name="profileImage"
+    type="file"
+    accept="image/*"
+    onChange={(event) => {
+      const file = event.target.files?.[0];
+
+      if (!file) return;
+
+      // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Profile image must be less than 5MB.");
+        return;
+      }
+
+      setProfileImageFile(file);
+      setProfileImagePreview(URL.createObjectURL(file));
+      setError("");
+    }}
+    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-green-100 file:px-4 file:py-2 file:font-semibold file:text-green-700 hover:file:bg-green-200"
+  />
+
+  <p className="mt-2 text-xs text-gray-400">
+    JPG, PNG or WEBP. Maximum 5MB.
+  </p>
+
+  {profileImagePreview && (
+    <div className="mt-4">
+      <p className="mb-2 text-xs font-medium text-gray-500">
+        Profile Image Preview
+      </p>
+
+      <img
+        src={profileImagePreview}
+        alt="Profile preview"
+        className="h-24 w-24 rounded-full border-4 border-green-100 object-cover"
+      />
+    </div>
+  )}
+</div>
 
                 {/* Terms */}
                 <div className="flex items-start gap-3">
